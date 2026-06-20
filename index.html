@@ -1,19 +1,62 @@
-// Gantinkan fungsi fetchData lama anda dengan kod ini
-function fetchData() {
-    const URL_GAS = "https://google.com";
+// 1. Tetapkan URL Google Apps Script Rasmi Tuan Pengarah
+const URL_GAS = "https://script.google.com/macros/s/AKfycbxiLuv0rbk8_4fPjuY2pp2T7aMBaCPapGnyrzkYQOG68dxJ2c7rybS9OoeNbxw4dpgx/exec";
 
+// 2. Fungsi Ambil Data dari GAS
+function fetchData() {
+    console.log("Memulakan tarikan data dari GAS...");
+    
     fetch(URL_GAS)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Respons rangkaian gagal dipanggil.");
+            }
+            return response.json();
+        })
         .then(data => {
-            // Sila pastikan nama fungsi ini sama dengan fungsi asal yang anda gunakan untuk membina senarai murid
-            // Contohnya jika fungsi asal bernama paparkanMurid(data), panggil fungsi tersebut di sini
-            console.log("Data berjaya diterima:", data);
+            console.log("Data murid berjaya diterima:", data);
             
-            // Contoh logik untuk hilangkan status memuatkan jika ada elemen berkaitan
+            // Panggil fungsi pembina UI untuk paparkan senarai nama murid
+            binaSenaraiMurid(data);
+
+            // Padamkan tulisan status "Memuatkan data murid..."
             const statusMemuatkan = document.getElementById("status-memuatkan");
-            if (statusMemuatkan) statusMemuatkan.style.display = "none";
+            if (statusMemuatkan) {
+                statusMemuatkan.style.display = "none";
+            }
         })
         .catch(error => {
             console.error("Ralat menarik data GAS:", error);
+            const statusMemuatkan = document.getElementById("status-memuatkan");
+            if (statusMemuatkan) {
+                statusMemuatkan.innerHTML = "<span style='color:red;'>Gagal memuatkan data murid. Sila semak backend.</span>";
+            }
         });
 }
+
+// 3. Fungsi Papar Senarai Murid (Dummy Data: Ahmad Jafni & Siti Nurhaliza)
+function binaSenaraiMurid(senaraiMurid) {
+    const container = document.getElementById("senarai-murid");
+    if (!container) return;
+    
+    container.innerHTML = ""; // Bersihkan kawasan sebelum isi data
+
+    senaraiMurid.forEach(murid => {
+        const kad = document.createElement("div");
+        kad.className = "kad-murid"; // Mengikut gaya CSS anda
+        kad.style.border = "1px solid #ccc";
+        kad.style.padding = "10px";
+        kad.style.margin = "10px 0";
+        kad.style.borderRadius = "8px";
+        kad.style.backgroundColor = "#fff";
+
+        kad.innerHTML = `
+            <p><strong>Nama:</strong> ${murid.nama}</p>
+            <p><strong>Bintang:</strong> ⭐️ <span id="bintang-${murid.id}">${murid.bintang}</span></p>
+            <button onclick="tambahBintang(${murid.id})" style="padding: 5px 10px; cursor: pointer;">Tambah Bintang 🚀</button>
+        `;
+        container.appendChild(kad);
+    });
+}
+
+// 4. Jalankan fungsi fetchData secara automatik apabila halaman web siap dibuka
+document.addEventListener("DOMContentLoaded", fetchData);
