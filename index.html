@@ -1,7 +1,112 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Star Rewards Application</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 450px;
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        .header-box {
+            background: linear-gradient(135deg, #fff3cd, #ffe8a1);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        h1 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 28px;
+        }
+        .instruction {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #444;
+            margin: 20px 0 10px 0;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 5px;
+        }
+        #status-memuatkan {
+            text-align: center;
+            padding: 15px;
+            background: #e2e8f0;
+            border-radius: 8px;
+            color: #4a5568;
+            font-weight: 500;
+        }
+        .kad-murid {
+            border: 1px solid #e2e8f0;
+            padding: 15px;
+            margin: 12px 0;
+            border-radius: 10px;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .kad-murid p {
+            margin: 0;
+            color: #333;
+        }
+        .btn-tambah {
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        .btn-tambah:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-box">
+        <h1>Star Rewards</h1>
+        <p class="instruction">Selamat datang! Di sini anda boleh melihat jadual murid, jumlah bintang mereka, dan menambahkan atau kurangkan bintang dengan mudah.</p>
+    </div>
+
+    <div class="section-title">Senarai Murid</div>
+    
+    <!-- Kawasan Status Memuatkan Data -->
+    <div id="status-memuatkan">Sedang memuatkan data murid...</div>
+    
+    <!-- Kawasan Senarai Murid Muncul -->
+    <div id="senarai-murid"></div>
+</div>
+
+<script>
 // 1. Tetapkan URL Google Apps Script Rasmi Tuan Pengarah
 const URL_GAS = "https://script.google.com/macros/s/AKfycbxiLuv0rbk8_4fPjuY2pp2T7aMBaCPapGnyrzkYQOG68dxJ2c7rybS9OoeNbxw4dpgx/exec";
 
-// 2. Fungsi Ambil Data dari GAS
+// 2. Fungsi Ambil Data dari GAS Backend
 function fetchData() {
     console.log("Memulakan tarikan data dari GAS...");
     
@@ -15,25 +120,25 @@ function fetchData() {
         .then(data => {
             console.log("Data murid berjaya diterima:", data);
             
-            // Panggil fungsi pembina UI untuk paparkan senarai nama murid
-            binaSenaraiMurid(data);
-
-            // Padamkan tulisan status "Memuatkan data murid..."
+            // Sembunyikan tulisan status "Sedang memuatkan data murid..."
             const statusMemuatkan = document.getElementById("status-memuatkan");
             if (statusMemuatkan) {
                 statusMemuatkan.style.display = "none";
             }
+
+            // Panggil fungsi untuk memaparkan senarai nama murid ke skrin
+            binaSenaraiMurid(data);
         })
         .catch(error => {
             console.error("Ralat menarik data GAS:", error);
             const statusMemuatkan = document.getElementById("status-memuatkan");
             if (statusMemuatkan) {
-                statusMemuatkan.innerHTML = "<span style='color:red;'>Gagal memuatkan data murid. Sila semak backend.</span>";
+                statusMemuatkan.innerHTML = "<span style='color:red;'>Gagal memuatkan data murid. Sila semak backend GAS.</span>";
             }
         });
 }
 
-// 3. Fungsi Papar Senarai Murid (Dummy Data: Ahmad Jafni & Siti Nurhaliza)
+// 3. Fungsi Membina Kad Senarai Murid (Ahmad Jafni & Siti Nurhaliza)
 function binaSenaraiMurid(senaraiMurid) {
     const container = document.getElementById("senarai-murid");
     if (!container) return;
@@ -42,21 +147,30 @@ function binaSenaraiMurid(senaraiMurid) {
 
     senaraiMurid.forEach(murid => {
         const kad = document.createElement("div");
-        kad.className = "kad-murid"; // Mengikut gaya CSS anda
-        kad.style.border = "1px solid #ccc";
-        kad.style.padding = "10px";
-        kad.style.margin = "10px 0";
-        kad.style.borderRadius = "8px";
-        kad.style.backgroundColor = "#fff";
+        kad.className = "kad-murid";
 
         kad.innerHTML = `
             <p><strong>Nama:</strong> ${murid.nama}</p>
             <p><strong>Bintang:</strong> ⭐️ <span id="bintang-${murid.id}">${murid.bintang}</span></p>
-            <button onclick="tambahBintang(${murid.id})" style="padding: 5px 10px; cursor: pointer;">Tambah Bintang 🚀</button>
+            <button class="btn-tambah" onclick="tambahBintang(${murid.id})">Tambah Bintang 🚀</button>
         `;
         container.appendChild(kad);
     });
 }
 
-// 4. Jalankan fungsi fetchData secara automatik apabila halaman web siap dibuka
+// 4. Fungsi Butang Tambah Bintang (Logik Tempatan Frontend)
+function tambahBintang(id) {
+    const elemenBintang = document.getElementById(`bintang-${id}`);
+    if (elemenBintang) {
+        let jumlahSemasa = parseInt(elemenBintang.innerText);
+        elemenBintang.innerText = jumlahSemasa + 1;
+        alert("Bintang berjaya ditambah secara lokal! 🚀");
+    }
+}
+
+// 5. Jalankan fungsi fetchData secara automatik apabila halaman web siap dibuka
 document.addEventListener("DOMContentLoaded", fetchData);
+</script>
+
+</body>
+</html>
