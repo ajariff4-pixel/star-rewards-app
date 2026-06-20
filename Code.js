@@ -1,79 +1,45 @@
-/**
- * Fungsi utama untuk memaparkan fail Index.html
- * Dipanggil apabila aplikasi diakses melalui URL.
- * Pastikan nama fail HTML adalah 'Index'.
- */
-function doGet() {
-  return HtmlService.createHtmlOutputFromFile('Index')
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-}
+// Alamat Web App GAS rasmi yang Tuan Pengarah berikan
+const URL_GAS = "https://script.google.com/macros/s/AKfycbxiLuv0rbk8_4fPjuY2pp2T7aMBaCPapGnyrzkYQOG68dxJ2c7rybS9OoeNbxw4dpgx/exec";
 
-/**
- * Membaca data murid dari Google Sheets.
- * Mengembalikan array objek dengan medan id, nama, dan bintang.
- */
-function dapatkanDataMurid() {
-  try {
-    var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = spreadsheet.getSheetByName('Sheet1');
-    if (!sheet) {
-      throw new Error("Sheet 'Sheet1' tidak dijumpai.");
-    }
+// Fungsi utama untuk menarik data murid sebaik sahaja aplikasi dibuka
+function muatDataMurid() {
+  const ruanganStatus = document.getElementById("status-memuatkan"); // Sila pastikan ID ini sama dengan HTML anda
+  const senaraiMuridContainer = document.getElementById("senarai-murid");
 
-    var semuaData = sheet.getDataRange().getValues();
-    if (semuaData.length <= 1) {
-      return [];
-    }
+  // Buat panggilan ke Google Apps Script
+  fetch(URL_GAS)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Gagal menyambung ke pelayan backend GAS.");
+      }
+      return response.json();
+    })
+    .then(data => {
+      // Sembunyikan tulisan "Memuatkan data murid..."
+      if (ruanganStatus) ruanganStatus.style.display = "none";
+      
+      // Kosongkan bekas senarai sebelum masukkan data baharu
+      if (senaraiMuridContainer) senaraiMuridContainer.innerHTML = "";
 
-    var hasil = [];
-    for (var i = 1; i < semuaData.length; i++) {
-      hasil.push({
-        id: semuaData[i][0],
-        nama: semuaData[i][1],
-        bintang: semuaData[i][2]
+      // Paparkan senarai murid dummy (Ahmad Jafni & Siti Nurhaliza) ke skrin
+      data.forEach(murid => {
+        const kadMurid = document.createElement("div");
+        kadMurid.className = "kad-murid"; // Sesuai dengan CSS anda
+        kadMurid.innerHTML = `
+          <p><strong>Nama:</strong> ${murid.nama}</p>
+          <p><strong>Bintang:</strong> ⭐️ <span id="bintang-${murid.id}">${murid.bintang}</span></p>
+          <button onclick="tambahBintang(${murid.id})">Tambah Bintang 🚀</button>
+        `;
+        if (senaraiMuridContainer) senaraiMuridContainer.appendChild(kadMurid);
       });
-    }
-
-    return hasil;
-  } catch (e) {
-    Logger.log('Ralat dalam dapatkanDataMurid: ' + e);
-    return [];
-  }
+    })
+    .catch(error => {
+      console.error("Ralat penuh:", error);
+      if (ruanganStatus) {
+        ruanganStatus.innerHTML = "<span style='color:red;'>Ralat: Gagal memuatkan data. Sila semak sambungan backend.</span>";
+      }
+    });
 }
 
-/**
- * Mengemas kini jumlah bintang dalam sheet untuk baris tertentu.
- * @param {number} row Baris untuk dikemas kini (1 = baris pertama, termasuk header).
- * @param {number} jumlahBaru Jumlah bintang baru untuk ditetapkan.
- */
-function kemaskiniBintang(row, jumlahBaru) {
-  try {
-    if (!row || row < 2) {
-      throw new Error('Baris mesti bermula dari 2 atau lebih tinggi.');
-    }
-    if (jumlahBaru === null || jumlahBaru === undefined || isNaN(jumlahBaru)) {
-      throw new Error('Jumlah baru mesti nombor yang sah.');
-    }
-
-    var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = spreadsheet.getSheetByName('Sheet1');
-    if (!sheet) {
-      throw new Error("Sheet 'Sheet1' tidak dijumpai.");
-    }
-
-    sheet.getRange(row, 3).setValue(Number(jumlahBaru));
-
-    return {
-      berjaya: true,
-      mesej: 'Bintang dikemaskini pada baris ' + row + '.',
-      row: row,
-      bintangBaru: Number(jumlahBaru)
-    };
-  } catch (e) {
-    Logger.log('Ralat dalam kemaskiniBintang: ' + e);
-    return {
-      berjaya: false,
-      mesej: e.message || e.toString()
-    };
-  }
-}
+// Jalankan fungsi memuatkan data secara automatik apabila halaman web siap dibuka
+document.addEventListener("DOMContentLoaded", muatDataMurid);
